@@ -1,18 +1,29 @@
 
-struct Word_Parser
-{
-    int id;
-    std::string value;
-};
+struct Word;
 
 class RecursiveDescentAnalyser
 {
-private:
-    
-    std::vector<Word> words;
+public:
+
+    void SourceFileInput(std::string path);
+
+    void Analyse();
+
+    void Output(std::string path);
 public:
     RecursiveDescentAnalyser(/* args */);
     ~RecursiveDescentAnalyser();
 
+    std::shared_ptr<RecursiveDescentAnalyser> getInstance();
+private:
+    
+    std::vector<Word> words;
 
+    std::string fileName;
+
+    static std::shared_ptr<RecursiveDescentAnalyser> instance;
+
+private:
+
+    void AnalyseInputString(std::string inputStr);
 };
