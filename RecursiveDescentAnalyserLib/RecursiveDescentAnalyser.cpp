@@ -108,25 +108,33 @@ bool RecursiveDescentAnalyser::Program()
 
 bool RecursiveDescentAnalyser::SubProgram()
 {
-    Word begin = GetWord();
-    if(begin.id != 1)
+    if(GetWord()==1)//begin
     {
-        Error("Error:Expected \"begin\"");
+        MovNext();
+        DeclarativeStatementTable();
+        if(GetWord()==23)//;
+        {
+            MovNext();
+            ExecutableStatementTable();
+            if(GetWord()==2)//end
+            {
+                MovNext();
+            }
+            else
+            {
+                Error("expected \"end\"");
+                return false;
+            }
+        }
+        else
+        {
+            Error("expected \";\"");
+            return false;
+        }
     }
-    MovNext();
-    DeclarativeStatementTable();
-    MovNext();
-    Word semicolon = GetWord();
-    if(semicolon.id!=23)
+    else
     {
-        Error("Error:Expected \";\"");
-        return false;
-    }
-    ExecutableStatementTable();
-    Word end = GetWord();
-    if(end.id!=2)
-    {
-        Error("Error:Expected \"end\"");
+        Error("expected\"begin\"");
         return false;
     }
     return true;
@@ -134,91 +142,344 @@ bool RecursiveDescentAnalyser::SubProgram()
 
 bool RecursiveDescentAnalyser::DeclarativeStatementTable()
 {
-    
+    DeclarativeStatement();
+    while(GetWord()==23)//;
+    {
+        MovNext();
+        DeclarativeStatement();
+    }
     return true;
 }
 
 bool RecursiveDescentAnalyser::DeclarativeStatement()
 {
+    if(GetWord()==3)//integer
+    {
+        MovNext();
+        DeclarativeStatement2();
+    }
+    else
+    {
+        Error("Expected\"integer\"");
+        return false;
+    }
     return true;
 }
 
-bool RecursiveDescentAnalyser::VariableDeclaration()
+bool RecursiveDescentAnalyser::DeclarativeStatement2()
 {
-    return true;
-}
-
-bool RecursiveDescentAnalyser::Variable()
-{
-    return true;
-}
-
-bool RecursiveDescentAnalyser::FunctionDeclaration()
-{
+    if(GetWord()==7)//function
+    {
+        MovNext();
+        if(GetWord()==10)//identifier
+        {
+            MovNext();
+            if(GetWord()==21)//(
+            {
+                MovNext();
+                Prameter();
+                if(GetWord()==22)//)
+                {
+                    MovNext();
+                    if(GetWord()==23)//;
+                    {
+                        MovNext();
+                        FunctionBody();
+                    }
+                    else
+                    {
+                        Error("Expected\";\"");
+                        return false;
+                    }
+                }
+                else
+                {
+                    Error("Expected\")\"");
+                    return false;
+                }
+            }
+            else
+            {
+                Error("Expected\"(\"");
+                return false;
+            }
+        }
+        else
+        {
+            Error("Expected identifier");
+            return false;
+        }
+    }
+    else if(GetWord()==10)//identifier
+    {
+        MovNext();
+    }
+    else
+    {
+        Error("Expected Identifier or \"function\"");
+        return false;
+    }
     return true;
 }
 
 bool RecursiveDescentAnalyser::Prameter()
 {
+    if(GetWord()==10)//identifier
+    {
+        MovNext();
+        return false;
+    }
+    else
+    {
+        Error("Expect identifier");
+        return false;
+    }
     return true;
 }
 
 bool RecursiveDescentAnalyser::FunctionBody()
 {
+    if(GetWord()==1)//begin
+    {
+        MovNext();
+        DeclarativeStatementTable();
+        if(GetWord()==23)//;
+        {
+            MovNext();
+            ExecutableStatementTable();
+            if(GetWord()==23)//;
+            {
+                MovNext();
+                if(GetWord()==2)//end
+                {
+                    MovNext();
+                }
+                else
+                {
+                    Error("Expected \"end\"");
+                    return false;
+                }
+            }
+            else
+            {
+                Error("Expected \";\"");
+                return false;
+            }
+        }
+        else
+        {
+            Error("Expected \";\"");
+            return false;
+        }
+    }
+    else
+    {
+        Error("Expected \"begin\"");
+        return false;
+    }
     return true;
 }
 
 bool RecursiveDescentAnalyser::ExecutableStatementTable()
 {
+    ExecutableStatement();
+    while(GetWord()==23)//;
+    {
+        MovNext();
+        ExecutableStatement();
+    }
     return true;
 }
 
 bool RecursiveDescentAnalyser::ExecutableStatement()
 {
-    return true;
-}
-
-bool RecursiveDescentAnalyser::ReadStatement()
-{
-    return true;
-}
-
-bool RecursiveDescentAnalyser::WriteStatement()
-{
-    return true;
-}
-
-bool RecursiveDescentAnalyser::AssignmentStatement()
-{
+    if(GetWord() == 8)//read
+    {
+        MovNext();
+        if(GetWord()==21)//(
+        {
+            MovNext();
+            if(GetWord()==10)//identifier
+            {
+                MovNext();
+                if(GetWord() == 22)//)
+                {
+                    MovNext();
+                }
+                else
+                {
+                    Error("Expected \")\"");
+                    return false;
+                }
+            }
+            else
+            {
+                Error("Expected identifier");
+                return false;
+            }
+        }
+        else
+        {
+            Error("Expected \"(\"");
+            return false;
+        }
+    }
+    else if(GetWord() == 9)//write
+    {
+        MovNext();
+        if(GetWord()==21)//(
+        {
+            MovNext();
+            if(GetWord()==10)//identifier
+            {
+                MovNext();
+                if(GetWord() == 22)//)
+                {
+                    MovNext();
+                }
+                else
+                {
+                    Error("Expected \")\"");
+                    return false;
+                }
+            }
+            else
+            {
+                Error("Expected identifier");
+                return false;
+            }
+        }
+        else
+        {
+            Error("Expected \"(\"");
+            return false;
+        }
+    }
+    else if(GetWord() == 10)//identifier
+    {
+        MovNext();
+        if(GetWord() == 20)//:=
+        {
+            MovNext();
+            ArithmeticExpression();
+        }
+        else
+        {
+            Error("Expected \":=\"");
+            return false;
+        }
+    }
+    else if(GetWord() == 4)//if
+    {
+        MovNext();
+        ConditionalExpression();
+        if(GetWord() == 5)//then
+        {
+            MovNext();
+            ExecutableStatement();
+            if(GetWord() == 6)//else
+            {
+                MovNext();
+                ExecutableStatement();
+            }
+            else
+            {
+                Error("Expected \"else\"");
+                return false;
+            }
+        }
+        else
+        {
+            Error("Expected \"then\"");
+            return false;
+        }
+    }
+    else
+    {
+        Error("Expected \"read\" or \"write\" or \"if\" or identifier");
+        return false;
+    }
     return true;
 }
 
 bool RecursiveDescentAnalyser::ArithmeticExpression()
 {
+    Item();
+    while(GetWord()==18)
+    {
+        MovNext();
+        Item();
+    }
     return true;
 }
 
 bool RecursiveDescentAnalyser::Item()
 {
+    Factor();
+    while(GetWord()==19)//*
+    {
+        MovNext();
+        Factor();
+    }
     return true;
 }
 
 bool RecursiveDescentAnalyser::Factor()
 {
+    if(GetWord() == 10)//identifier
+    {
+        MovNext();
+        Factor2();
+    }
+    else if(GetWord() == 11)//constant number
+    {
+        MovNext();
+    }
+    else
+    {
+        Error("Expected identifier or constant number");
+        return false;
+    }
     return true;
 }
 
-bool RecursiveDescentAnalyser::ConditionalStatement()
+bool RecursiveDescentAnalyser::Factor2()
 {
+    if(GetWord() == 21)//(
+    {
+        MovNext();
+        ArithmeticExpression();
+        if(GetWord() == 22)//)
+        {
+            MovNext();
+        }
+        else
+        {
+            Error("Expected \")\"");
+            return false;
+        }
+    }
     return true;
 }
 
 bool RecursiveDescentAnalyser::ConditionalExpression()
 {
-    return true;
-}
-
-bool RecursiveDescentAnalyser::RelationalOperators()
-{
+    ArithmeticExpression();
+    Word conditionOperator = GetWord();
+    if(conditionOperator == 12
+        ||conditionOperator == 13
+        ||conditionOperator == 14
+        ||conditionOperator == 15
+        ||conditionOperator == 16
+        ||conditionOperator == 17)//condition operator
+    {
+        MovNext();
+        ArithmeticExpression();
+    }
+    else
+    {
+        Error("Expected \"=\" or \"<>\" or \"<=\" or \"<\" or \">=\" or \">\"");
+        return false;
+    }
     return true;
 }

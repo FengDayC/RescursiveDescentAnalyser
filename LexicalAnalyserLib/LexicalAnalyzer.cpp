@@ -1,6 +1,16 @@
 #include "pch.h"
 #include "LexicalAnalyzer.h"
 
+bool Word::operator==(Word& word)
+{
+    return id==word.id&&symbol==word.symbol;
+}
+
+bool Word::operator==(int id)
+{
+    return this->id == id;
+}
+
 S_PTR(LexicalAnalyzer, LexicalAnalyzer::instance) = MK_SPTR(LexicalAnalyzer, );
 
 void LexicalAnalyzer::moveFwd()

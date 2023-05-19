@@ -15,6 +15,10 @@ struct Word
         *sstream << "  " << id;
         return sstream->str();
     }
+
+    bool operator==(Word& word);
+
+    bool operator==(int id);
 };
 
 struct Error

@@ -49,9 +49,7 @@ private:
 
     bool DeclarativeStatement();
 
-    bool VariableDeclaration();
-
-    bool Variable();
+    bool DeclarativeStatement2();
 
     bool FunctionDeclaration();
 
@@ -63,21 +61,13 @@ private:
 
     bool ExecutableStatement();
 
-    bool ReadStatement();
-
-    bool WriteStatement();
-
-    bool AssignmentStatement();
-
     bool ArithmeticExpression();
 
     bool Item();
 
     bool Factor();
 
-    bool ConditionalStatement();
+    bool Factor2();
 
     bool ConditionalExpression();
-
-    bool RelationalOperators();
 };
