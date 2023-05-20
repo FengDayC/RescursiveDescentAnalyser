@@ -68,6 +68,8 @@ public:
 
     void Analyse();
 
-    void Output();
+    bool Output();
+
+    std::string GetFileName() const;
     
 };

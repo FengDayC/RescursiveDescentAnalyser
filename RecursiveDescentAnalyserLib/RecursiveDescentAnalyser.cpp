@@ -15,7 +15,11 @@ RecursiveDescentAnalyser::~RecursiveDescentAnalyser()
 
 std::shared_ptr<RecursiveDescentAnalyser> RecursiveDescentAnalyser::getInstance()
 {
-    return std::move(instance);
+    if(instance==nullptr)
+    {
+        instance = MK_SPTR(RecursiveDescentAnalyser,);
+    }
+    return instance;
 }
 
 void RecursiveDescentAnalyser::Init()
@@ -48,33 +52,45 @@ void RecursiveDescentAnalyser::SourceFileInput(std::string path)
     AnalyseInputString(inputStr);
 }
 
+void RecursiveDescentAnalyser::Analyse()
+{
+    Program();
+}
+
+bool RecursiveDescentAnalyser::Output()
+{
+    return false;
+}
+
 void RecursiveDescentAnalyser::AnalyseInputString(std::string inputStr)
 {
     int length = inputStr.length();
     int index=0,id;
     S_PTR(std::stringstream,sstream) = MK_SPTR(std::stringstream,);
+    Word newWord;
     while(index<length)
     {
-        Word newWord;
         id=0;
-        sstream->clear();
+        sstream->str("");
         for(int i=0;i<16;i++,index++)
         {
-            if(inputStr[i]==' ')
+            if(inputStr[index]==' ')
             {
                 continue;
             }
             else
             {
-                *sstream<<inputStr[i];
+                *sstream<<inputStr[index];
             }
         }
+        index++;
         newWord.symbol = sstream->str();
         while(inputStr[++index]!='\n')
         {
             id*=10;
             id+=(inputStr[index]-'0');
         }
+        index++;
         newWord.id = id;
         words.push_back(newWord);
     }
@@ -85,9 +101,19 @@ Word RecursiveDescentAnalyser::GetWord()
     return words[p];
 }
 
+Word RecursiveDescentAnalyser::GetWord(int p)
+{
+    return words[p];
+}
+
 void RecursiveDescentAnalyser::MovNext()
 {
     p++;
+    while(GetWord()==24)
+    {
+        line++;
+        p++;
+    }
 }
 
 void RecursiveDescentAnalyser::MovFwd()
@@ -97,7 +123,14 @@ void RecursiveDescentAnalyser::MovFwd()
 
 void RecursiveDescentAnalyser::Error(std::string notice)
 {
-
+    int t = p;
+    Word pre = GetWord(t-1);
+    while(pre.id==24)
+    {
+        t--;
+        pre = GetWord(t);
+    }
+    std::cout<<"***LINE:"<<line<<" p="<<p<<" "<<notice<<" after \""<<pre.symbol<<"\""<<std::endl;
 }
 
 bool RecursiveDescentAnalyser::Program()
@@ -112,23 +145,14 @@ bool RecursiveDescentAnalyser::SubProgram()
     {
         MovNext();
         DeclarativeStatementTable();
-        if(GetWord()==23)//;
+        ExecutableStatementTable();
+        if(GetWord()==2)//end
         {
             MovNext();
-            ExecutableStatementTable();
-            if(GetWord()==2)//end
-            {
-                MovNext();
-            }
-            else
-            {
-                Error("expected \"end\"");
-                return false;
-            }
         }
         else
         {
-            Error("expected \";\"");
+            Error("expected \"end\"");
             return false;
         }
     }
@@ -142,28 +166,39 @@ bool RecursiveDescentAnalyser::SubProgram()
 
 bool RecursiveDescentAnalyser::DeclarativeStatementTable()
 {
-    DeclarativeStatement();
-    while(GetWord()==23)//;
-    {
-        MovNext();
-        DeclarativeStatement();
-    }
-    return true;
-}
-
-bool RecursiveDescentAnalyser::DeclarativeStatement()
-{
     if(GetWord()==3)//integer
     {
         MovNext();
         DeclarativeStatement2();
+        if(GetWord() == 23)
+        {
+            MovNext();
+            while(GetWord() == 3)//integer
+            {
+                MovNext();
+                DeclarativeStatement2();
+                if(GetWord() == 23)
+                {
+                    MovNext();
+                }
+                else
+                {
+                    Error("Expected\";\"");
+                    return false;
+                }
+            }
+        }
+        else
+        {
+            Error("Expected\";\"");
+            return false;
+        }
     }
     else
     {
-        Error("Expected\"integer\"");
-        return false;
+        Error("expected\"integer\"");
+        return false;        
     }
-    return true;
 }
 
 bool RecursiveDescentAnalyser::DeclarativeStatement2()
@@ -227,7 +262,6 @@ bool RecursiveDescentAnalyser::Prameter()
     if(GetWord()==10)//identifier
     {
         MovNext();
-        return false;
     }
     else
     {
@@ -243,32 +277,14 @@ bool RecursiveDescentAnalyser::FunctionBody()
     {
         MovNext();
         DeclarativeStatementTable();
-        if(GetWord()==23)//;
+        ExecutableStatementTable();
+        if(GetWord()==2)//end
         {
             MovNext();
-            ExecutableStatementTable();
-            if(GetWord()==23)//;
-            {
-                MovNext();
-                if(GetWord()==2)//end
-                {
-                    MovNext();
-                }
-                else
-                {
-                    Error("Expected \"end\"");
-                    return false;
-                }
-            }
-            else
-            {
-                Error("Expected \";\"");
-                return false;
-            }
         }
         else
         {
-            Error("Expected \";\"");
+            Error("Expected \"end\"");
             return false;
         }
     }

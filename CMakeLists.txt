@@ -14,6 +14,15 @@ set(PCH ${CMAKE_CURRENT_SOURCE_DIR}/pch.h)
 add_subdirectory(LexicalAnalyserLib)
 add_subdirectory(RecursiveDescentAnalyserLib)
 
-add_executable(RecursiveDescentAnalyser main.cpp)
-target_include_directories(RecursiveDescentAnalyser PRIVATE RecursiveDescentAnalyserLib)
-target_link_libraries(RecursiveDescentAnalyser PRIVATE RecursiveDescentAnalyserLib)
+add_executable(dcc main.cpp)
+target_include_directories(dcc PRIVATE RecursiveDescentAnalyserLib)
+target_link_libraries(dcc PRIVATE RecursiveDescentAnalyserLib)
+target_include_directories(dcc PRIVATE LexicalAnalyserLib)
+
+#install
+
+set(CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR}/install)
+
+install(TARGETS dcc DESTINATION bin)
+
+#install

@@ -1,6 +1,16 @@
 
 struct Word;
 
+struct Variable
+{
+
+};
+
+struct Procedure
+{
+
+};
+
 class RecursiveDescentAnalyser
 {
 public:
@@ -11,12 +21,12 @@ public:
 
     void Analyse();
 
-    void Output(std::string path);
+    bool Output();
 public:
     RecursiveDescentAnalyser(/* args */);
     ~RecursiveDescentAnalyser();
 
-    std::shared_ptr<RecursiveDescentAnalyser> getInstance();
+    static std::shared_ptr<RecursiveDescentAnalyser> getInstance();
 private:
     
     int p,line;
@@ -33,6 +43,8 @@ private:
 
     Word GetWord();
 
+    Word GetWord(int p);
+
     void MovNext();
 
     void MovFwd();
@@ -46,8 +58,6 @@ private:
     bool SubProgram();
 
     bool DeclarativeStatementTable();
-
-    bool DeclarativeStatement();
 
     bool DeclarativeStatement2();
 

@@ -413,3 +413,5 @@ assets
 build
 out
 CMakeSettings.json
+install
+.vscode

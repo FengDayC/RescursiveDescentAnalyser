@@ -37,7 +37,7 @@ void LexicalAnalyzer::SourceFileInput(std::string path)
     fileIn->open(path);
     if (!fileIn->is_open())
     {
-        std::cout << "cannot open file:" << path << std::endl;
+        std::cout << "Error:Cannot open file:" << path << std::endl;
     }
     std::string::size_type iPos;
     #ifdef BUILT_IN_WIN32
@@ -219,7 +219,7 @@ void LexicalAnalyzer::Analyse()
     std::cout << "词法分析完成" << std::endl;
 }
 
-void LexicalAnalyzer::Output()
+bool LexicalAnalyzer::Output()
 {
     S_PTR(std::ofstream, fileErr) = MK_SPTR(std::ofstream, );
     S_PTR(std::ofstream, fileDyd) = MK_SPTR(std::ofstream, );
@@ -228,12 +228,14 @@ void LexicalAnalyzer::Output()
     if (!fileErr->is_open())
     {
         std::cout << "无法创建err文件" << std::endl;
+        return false;
     }
 
     fileDyd->open(fileName + ".dyd", std::ios_base::out);
     if (!fileDyd->is_open())
     {
         std::cout << "无法创建dyd文件" << std::endl;
+        return false;
     }
 
     for (auto it = outputResult->begin(); it != outputResult->end(); it++)
@@ -245,6 +247,7 @@ void LexicalAnalyzer::Output()
     if (!outputErr->size())
     {
         std::cout << "未出现错误，分析完成" << std::endl;
+        return true;
     }
     else
     {
@@ -255,4 +258,10 @@ void LexicalAnalyzer::Output()
         std::cout << "***LINE:" << it->line << "  " << it->text << std::endl;
         *fileErr << "***LINE:" << it->line << "  " << it->text << std::endl;
     }
+    return false;
+}
+
+std::string LexicalAnalyzer::GetFileName() const
+{
+    return fileName;
 }
