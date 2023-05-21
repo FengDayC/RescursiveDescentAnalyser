@@ -66,6 +66,7 @@ bool RecursiveDescentAnalyser::Output()
 {
     S_PTR(std::ofstream, varFile) = MK_SPTR(std::ofstream,fileName+".var");
     S_PTR(std::ofstream, proFile) = MK_SPTR(std::ofstream,fileName+".pro");
+    S_PTR(std::ofstream, errFile) = MK_SPTR(std::ofstream,fileName+".err");
 
     if(errors.empty())
     {
@@ -80,25 +81,28 @@ bool RecursiveDescentAnalyser::Output()
             if(error.type==ErrorType::Expected)
             {
                 std::cout<<"***"<<error.line<<":Expected"<<" \""<<error.symbol<<"\" after "<<error.preSymbol<<std::endl;
+                *errFile<<"***"<<error.line<<":Expected"<<" \""<<error.symbol<<"\" after "<<error.preSymbol<<std::endl;
             }
             else if(error.type == ErrorType::Undefined)
             {
                 std::cout<<"***"<<error.line<<":Symbol Undefined"<<" \""<<error.symbol<<"\""<<std::endl;
+                *errFile<<"***"<<error.line<<":Symbol Undefined"<<" \""<<error.symbol<<"\""<<std::endl;
             }
             else if(error.type == ErrorType::Redefined)
             {
                 std::cout<<"***"<<error.line<<":Symbol Redefined"<<" \""<<error.symbol<<"\""<<std::endl;
+                *errFile<<"***"<<error.line<<":Symbol Redefined"<<" \""<<error.symbol<<"\""<<std::endl;
             }
         }
         return false;
     }
     for(auto procedure : procedureTable)
     {
-        std::cout<<"Procedure:"<<procedure.pname<<std::endl;
+        /*std::cout<<"Procedure:"<<procedure.pname<<std::endl;
         std::cout<<"type:"<<(procedure.ptype == Type::Void ? "Void" : "Integer")<<std::endl;
         std::cout<<"plev:"<<procedure.plev<<std::endl;
         std::cout<<"fadr:"<<procedure.fadr<<std::endl;
-        std::cout<<"ladr:"<<procedure.ladr<<std::endl<<std::endl;
+        std::cout<<"ladr:"<<procedure.ladr<<std::endl<<std::endl;*/
         
         *proFile<<"Procedure:"<<procedure.pname<<std::endl;
         *proFile<<"type:"<<(procedure.ptype == Type::Void ? "Void" : "Integer")<<std::endl;
@@ -109,12 +113,12 @@ bool RecursiveDescentAnalyser::Output()
 
     for(auto var : variableTable)
     {
-        std::cout<<"vname:"<<var.vname<<std::endl;
+        /*std::cout<<"vname:"<<var.vname<<std::endl;
         std::cout<<"vproc:"<<var.vproc<<std::endl;
         std::cout<<"kind:"<<(var.vkind==VariableKind::Parameter?"Parameter":"Variable")<<std::endl;
         std::cout<<"vtype:"<<(var.vtype==Type::Void?"Void":"Integer")<<std::endl;
         std::cout<<"vlev:"<<var.vlev<<std::endl;
-        std::cout<<"vadr:"<<var.vadr<<std::endl<<std::endl;
+        std::cout<<"vadr:"<<var.vadr<<std::endl<<std::endl;*/
 
         *varFile<<"vname:"<<var.vname<<std::endl;
         *varFile<<"vproc:"<<var.vproc<<std::endl;
