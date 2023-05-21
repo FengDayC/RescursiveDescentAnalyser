@@ -5,7 +5,7 @@
 int main(int argc, char** argv) 
 {
     std::string path,fileName;
-    path = std::filesystem::current_path();
+    path = std::filesystem::current_path().u8string();
     if(argc>0)
     {
         char* str = argv[1];
