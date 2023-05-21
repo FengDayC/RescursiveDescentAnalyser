@@ -246,7 +246,7 @@ bool LexicalAnalyzer::Output()
     }
     if (!outputErr->size())
     {
-        std::cout << "未出现错误，分析完成" << std::endl;
+        std::cout << "未出现错误，词法分析完成" << std::endl;
         return true;
     }
     else

@@ -64,13 +64,33 @@ void RecursiveDescentAnalyser::Analyse()
 
 bool RecursiveDescentAnalyser::Output()
 {
+    S_PTR(std::ofstream, varFile) = MK_SPTR(std::ofstream,fileName+".var");
+    S_PTR(std::ofstream, proFile) = MK_SPTR(std::ofstream,fileName+".pro");
+
     if(errors.empty())
     {
         std::cout<<"未发现语法错误,分析完成"<<std::endl;
     }
     else
     {
-        std::cout<<"发现如下错误:"<<std::endl;
+        std::cout<<"语法分析发现如下错误:"<<std::endl;
+        for(auto errLine : errors)
+        {
+            ParseError error = errLine.second[0];
+            if(error.type==ErrorType::Expected)
+            {
+                std::cout<<"***"<<error.line<<":Expected"<<" \""<<error.symbol<<"\" after "<<error.preSymbol<<std::endl;
+            }
+            else if(error.type == ErrorType::Undefined)
+            {
+                std::cout<<"***"<<error.line<<":Symbol Undefined"<<" \""<<error.symbol<<"\""<<std::endl;
+            }
+            else if(error.type == ErrorType::Redefined)
+            {
+                std::cout<<"***"<<error.line<<":Symbol Redefined"<<" \""<<error.symbol<<"\""<<std::endl;
+            }
+        }
+        return false;
     }
     for(auto procedure : procedureTable)
     {
@@ -78,9 +98,14 @@ bool RecursiveDescentAnalyser::Output()
         std::cout<<"type:"<<(procedure.ptype == Type::Void ? "Void" : "Integer")<<std::endl;
         std::cout<<"plev:"<<procedure.plev<<std::endl;
         std::cout<<"fadr:"<<procedure.fadr<<std::endl;
-        std::cout<<"ladr:"<<procedure.ladr<<std::endl;
+        std::cout<<"ladr:"<<procedure.ladr<<std::endl<<std::endl;
+        
+        *proFile<<"Procedure:"<<procedure.pname<<std::endl;
+        *proFile<<"type:"<<(procedure.ptype == Type::Void ? "Void" : "Integer")<<std::endl;
+        *proFile<<"plev:"<<procedure.plev<<std::endl;
+        *proFile<<"fadr:"<<procedure.fadr<<std::endl;
+        *proFile<<"ladr:"<<procedure.ladr<<std::endl<<std::endl;
     }
-    std::cout<<std::endl;
 
     for(auto var : variableTable)
     {
@@ -89,7 +114,14 @@ bool RecursiveDescentAnalyser::Output()
         std::cout<<"kind:"<<(var.vkind==VariableKind::Parameter?"Parameter":"Variable")<<std::endl;
         std::cout<<"vtype:"<<(var.vtype==Type::Void?"Void":"Integer")<<std::endl;
         std::cout<<"vlev:"<<var.vlev<<std::endl;
-        std::cout<<"vadr:"<<var.vadr<<std::endl;
+        std::cout<<"vadr:"<<var.vadr<<std::endl<<std::endl;
+
+        *varFile<<"vname:"<<var.vname<<std::endl;
+        *varFile<<"vproc:"<<var.vproc<<std::endl;
+        *varFile<<"kind:"<<(var.vkind==VariableKind::Parameter?"Parameter":"Variable")<<std::endl;
+        *varFile<<"vtype:"<<(var.vtype==Type::Void?"Void":"Integer")<<std::endl;
+        *varFile<<"vlev:"<<var.vlev<<std::endl;
+        *varFile<<"vadr:"<<var.vadr<<std::endl<<std::endl;
     }
     return true;
 }
@@ -169,6 +201,11 @@ void RecursiveDescentAnalyser::ExpectedError(std::string expected)
 void RecursiveDescentAnalyser::UndefinedError(std::string symbol)
 {
     errors[line].push_back({line,p,ErrorType::Undefined,"",symbol});
+}
+
+void RecursiveDescentAnalyser::RedefinedError(std::string symbol)
+{
+    errors[line].push_back({line,p,ErrorType::Redefined,"",symbol});
 }
 
 bool RecursiveDescentAnalyser::Program()
@@ -325,9 +362,12 @@ bool RecursiveDescentAnalyser::VariableReduce()
     if(GetWord()==10)//identifier
     {
         Word identifier = GetWord();
-        if(!CheckVariableTable(identifier.symbol)&&procedureStack.top().pname!=identifier.symbol)
+        if(procedureStack.top().pname!=identifier.symbol)
         {
-            return false;
+            if(!CheckVariableTable(identifier.symbol))
+            {
+                return false;
+            }
         }
         MovNext();
     }
@@ -584,6 +624,34 @@ void RecursiveDescentAnalyser::EndProgram()
 
 void RecursiveDescentAnalyser::BeginFunction(std::string procedureName, Type procedureType)
 {
+    bool defined=false;
+    for(auto procedure : procedureTable)
+    {
+        if(procedure.pname==procedureName)
+        {
+            defined=true;
+            break;
+        }
+    }
+    std::stack<Procedure> tmp;
+    while(!procedureStack.empty())
+    {
+        tmp.push(procedureStack.top());
+        if(procedureStack.top().pname==procedureName)
+        {
+            defined=true;
+        }
+        procedureStack.pop();
+    }
+    while(!tmp.empty())
+    {
+        procedureStack.push(tmp.top());
+        tmp.pop();
+    }
+    if(defined)
+    {
+        RedefinedError(procedureName);
+    }
     procedureStack.push({procedureName,procedureType,(int)procedureStack.size(),-1,-1});
 }
 
@@ -599,6 +667,24 @@ void RecursiveDescentAnalyser::EndFunction()
 void RecursiveDescentAnalyser::DeclareVariable(std::string vName,Type type)
 {
     Procedure &procedure = procedureStack.top();
+    bool defined=false;
+    if(procedure.fadr!=-1)
+    {
+        for(int i=procedure.fadr;i<variableTable.size();i++)
+        {
+            Variable var = variableTable[i];
+            if(var.vname==vName&&var.vlev==procedure.plev)
+            {
+                defined=true;
+                break;
+            }
+        }
+    }
+    if(defined)
+    {
+        RedefinedError(vName);
+        return;
+    }
     VariableKind kind = VariableKind::Variable;
     if(parameters.size()>0)
     {

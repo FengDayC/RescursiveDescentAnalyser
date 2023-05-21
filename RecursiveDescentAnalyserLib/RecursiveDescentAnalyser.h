@@ -16,7 +16,8 @@ enum class Type
 enum class ErrorType
 {
     Expected,
-    Undefined
+    Undefined,
+    Redefined
 };
 
 struct Variable
@@ -98,6 +99,8 @@ private:
     void ExpectedError(std::string expected);
 
     void UndefinedError(std::string symbol);
+
+    void RedefinedError(std::string symbol);
 
 private:
 
