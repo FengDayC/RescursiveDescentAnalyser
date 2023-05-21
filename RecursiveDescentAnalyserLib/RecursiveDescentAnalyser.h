@@ -13,6 +13,12 @@ enum class Type
     Integer = 1
 };
 
+enum class ErrorType
+{
+    Expected,
+    Undefined
+};
+
 struct Variable
 {
     std::string vname;
@@ -36,6 +42,7 @@ struct ParseError
 {
     int line;
     int p;
+    ErrorType type;
     std::string preSymbol;
     std::string symbol;
 };
@@ -88,7 +95,9 @@ private:
 
     void MovFwd();
 
-    void Error(std::string expected);
+    void ExpectedError(std::string expected);
+
+    void UndefinedError(std::string symbol);
 
 private:
 
@@ -137,4 +146,6 @@ private:
     bool CheckVariableTable(std::string symbol);
 
     bool CheckProcedureTable(std::string symbol);
+
+    void PostProcess();
 };

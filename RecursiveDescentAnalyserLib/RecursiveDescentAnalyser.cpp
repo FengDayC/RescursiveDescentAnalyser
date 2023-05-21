@@ -59,10 +59,19 @@ void RecursiveDescentAnalyser::SourceFileInput(std::string path)
 void RecursiveDescentAnalyser::Analyse()
 {
     Program();
+    PostProcess();
 }
 
 bool RecursiveDescentAnalyser::Output()
 {
+    if(errors.empty())
+    {
+        std::cout<<"未发现语法错误,分析完成"<<std::endl;
+    }
+    else
+    {
+        std::cout<<"发现如下错误:"<<std::endl;
+    }
     for(auto procedure : procedureTable)
     {
         std::cout<<"Procedure:"<<procedure.pname<<std::endl;
@@ -70,6 +79,17 @@ bool RecursiveDescentAnalyser::Output()
         std::cout<<"plev:"<<procedure.plev<<std::endl;
         std::cout<<"fadr:"<<procedure.fadr<<std::endl;
         std::cout<<"ladr:"<<procedure.ladr<<std::endl;
+    }
+    std::cout<<std::endl;
+
+    for(auto var : variableTable)
+    {
+        std::cout<<"vname:"<<var.vname<<std::endl;
+        std::cout<<"vproc:"<<var.vproc<<std::endl;
+        std::cout<<"kind:"<<(var.vkind==VariableKind::Parameter?"Parameter":"Variable")<<std::endl;
+        std::cout<<"vtype:"<<(var.vtype==Type::Void?"Void":"Integer")<<std::endl;
+        std::cout<<"vlev:"<<var.vlev<<std::endl;
+        std::cout<<"vadr:"<<var.vadr<<std::endl;
     }
     return true;
 }
@@ -133,7 +153,7 @@ void RecursiveDescentAnalyser::MovFwd()
     p--;
 }
 
-void RecursiveDescentAnalyser::Error(std::string expected)
+void RecursiveDescentAnalyser::ExpectedError(std::string expected)
 {
     int t = p;
     Word pre = GetWord(t-1);
@@ -143,7 +163,12 @@ void RecursiveDescentAnalyser::Error(std::string expected)
         pre = GetWord(t);
     }
     //std::cout<<"***LINE:"<<line<<" p="<<p<<" "<<notice<<" after \""<<pre.symbol<<"\""<<std::endl;
-    errors[line].push_back({line,p,pre.symbol,expected});
+    errors[line].push_back({line,p,ErrorType::Expected,pre.symbol,expected});
+}
+
+void RecursiveDescentAnalyser::UndefinedError(std::string symbol)
+{
+    errors[line].push_back({line,p,ErrorType::Undefined,"",symbol});
 }
 
 bool RecursiveDescentAnalyser::Program()
@@ -167,13 +192,13 @@ bool RecursiveDescentAnalyser::SubProgram()
         }
         else
         {
-            Error("end");
+            ExpectedError("end");
             return false;
         }
     }
     else
     {
-        Error("begin");
+        ExpectedError("begin");
         return false;
     }
     return true;
@@ -198,20 +223,20 @@ bool RecursiveDescentAnalyser::DeclarativeStatementTable()
                 }
                 else
                 {
-                    Error(";");
+                    ExpectedError(";");
                     return false;
                 }
             }
         }
         else
         {
-            Error(";");
+            ExpectedError(";");
             return false;
         }
     }
     else
     {
-        Error("integer");
+        ExpectedError("integer");
         return false;        
     }
 }
@@ -243,25 +268,25 @@ bool RecursiveDescentAnalyser::DeclarativeStatement2(Type type)
                     }
                     else
                     {
-                        Error(";");
+                        ExpectedError(";");
                         return false;
                     }
                 }
                 else
                 {
-                    Error(")");
+                    ExpectedError(")");
                     return false;
                 }
             }
             else
             {
-                Error("(");
+                ExpectedError("(");
                 return false;
             }
         }
         else
         {
-            Error("identifier");
+            ExpectedError("identifier");
             return false;
         }
     }
@@ -273,7 +298,7 @@ bool RecursiveDescentAnalyser::DeclarativeStatement2(Type type)
     }
     else
     {
-        Error("identifier or function");
+        ExpectedError("identifier or function");
         return false;
     }
     return true;
@@ -289,7 +314,7 @@ bool RecursiveDescentAnalyser::Prameter()
     }
     else
     {
-        Error("identifier");
+        ExpectedError("identifier");
         return false;
     }
     return true;
@@ -300,7 +325,7 @@ bool RecursiveDescentAnalyser::VariableReduce()
     if(GetWord()==10)//identifier
     {
         Word identifier = GetWord();
-        if(!CheckVariableTable(identifier.symbol))
+        if(!CheckVariableTable(identifier.symbol)&&procedureStack.top().pname!=identifier.symbol)
         {
             return false;
         }
@@ -308,7 +333,7 @@ bool RecursiveDescentAnalyser::VariableReduce()
     }
     else
     {
-        Error("identifier");
+        ExpectedError("identifier");
         return false;
     }
     return true;
@@ -328,13 +353,13 @@ bool RecursiveDescentAnalyser::FunctionBody()
         }
         else
         {
-            Error("end");
+            ExpectedError("end");
             return false;
         }
     }
     else
     {
-        Error("begin");
+        ExpectedError("begin");
         return false;
     }
     return true;
@@ -359,20 +384,30 @@ bool RecursiveDescentAnalyser::ExecutableStatement()
         if(GetWord()==21)//(
         {
             MovNext();
-            VariableReduce();
-            if(GetWord() == 22)//)
+            if(GetWord() == 10)//identifier
             {
+                Word identifier = GetWord();
+                DeclareVariable(identifier.symbol,Type::Integer);
                 MovNext();
+                if(GetWord() == 22)//)
+                {
+                    MovNext();
+                }
+                else
+                {
+                    ExpectedError(")");
+                    return false;
+                }
             }
             else
             {
-                Error(")");
+                ExpectedError("identifier");
                 return false;
             }
         }
         else
         {
-            Error("(");
+            ExpectedError("(");
             return false;
         }
     }
@@ -389,13 +424,13 @@ bool RecursiveDescentAnalyser::ExecutableStatement()
             }
             else
             {
-                Error(")");
+                ExpectedError(")");
                 return false;
             }
         }
         else
         {
-            Error("(");
+            ExpectedError("(");
             return false;
         }
     }
@@ -409,7 +444,7 @@ bool RecursiveDescentAnalyser::ExecutableStatement()
         }
         else
         {
-            Error(":=");
+            ExpectedError(":=");
             return false;
         }
     }
@@ -428,19 +463,19 @@ bool RecursiveDescentAnalyser::ExecutableStatement()
             }
             else
             {
-                Error("else");
+                ExpectedError("else");
                 return false;
             }
         }
         else
         {
-            Error("then");
+            ExpectedError("then");
             return false;
         }
     }
     else
     {
-        Error("read or write or if or identifier");
+        ExpectedError("read or write or if or identifier");
         return false;
     }
     return true;
@@ -482,7 +517,7 @@ bool RecursiveDescentAnalyser::Factor()
     }
     else
     {
-        Error("identifier or constant number");
+        ExpectedError("identifier or constant number");
         return false;
     }
     return true;
@@ -501,7 +536,7 @@ bool RecursiveDescentAnalyser::Factor2(std::string symbol)
         }
         else
         {
-            Error(")");
+            ExpectedError(")");
             return false;
         }
     }
@@ -528,7 +563,7 @@ bool RecursiveDescentAnalyser::ConditionalExpression()
     }
     else
     {
-        Error("= or <> or <= or < or >= or >");
+        ExpectedError("= or <> or <= or < or >= or >");
         return false;
     }
     return true;
@@ -563,13 +598,17 @@ void RecursiveDescentAnalyser::EndFunction()
 
 void RecursiveDescentAnalyser::DeclareVariable(std::string vName,Type type)
 {
-    Procedure procedure = procedureStack.top();
+    Procedure &procedure = procedureStack.top();
     VariableKind kind = VariableKind::Variable;
     if(parameters.size()>0)
     {
         kind = parameters.top()==vName?VariableKind::Parameter:VariableKind::Variable;
     }
     variableTable.push_back({vName,procedure.pname,kind,type,procedure.plev,(int)variableTable.size()});
+    if(procedure.fadr==-1)
+    {
+        procedure.fadr = variableTable.size()-1;
+    }
 }
 
 bool RecursiveDescentAnalyser::CheckVariableTable(std::string symbol)
@@ -581,6 +620,7 @@ bool RecursiveDescentAnalyser::CheckVariableTable(std::string symbol)
             return true;
         }
     }
+    UndefinedError(symbol);
     return false;
 }
 
@@ -597,5 +637,14 @@ bool RecursiveDescentAnalyser::CheckProcedureTable(std::string symbol)
     {
         return true;
     }
+    UndefinedError(symbol);
     return false;
+}
+
+void RecursiveDescentAnalyser::PostProcess()
+{
+    for(int i=0;i<variableTable.size();i++)
+    {
+        variableTable[i].vadr = i;
+    }
 }
