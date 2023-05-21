@@ -70,7 +70,7 @@ bool RecursiveDescentAnalyser::Output()
 
     if(errors.empty())
     {
-        std::cout<<"No parsing prror founded,finished analyzing"<<std::endl;
+        std::cout<<"No parsing error founded,finished analyzing"<<std::endl;
     }
     else
     {
@@ -80,8 +80,8 @@ bool RecursiveDescentAnalyser::Output()
             ParseError error = errLine.second[0];
             if(error.type==ErrorType::Expected)
             {
-                std::cout<<"***"<<error.line<<":Expected"<<" \""<<error.symbol<<"\" after "<<error.preSymbol<<std::endl;
-                *errFile<<"***"<<error.line<<":Expected"<<" \""<<error.symbol<<"\" after "<<error.preSymbol<<std::endl;
+                std::cout<<"***"<<error.line<<":Expected"<<" \""<<error.symbol<<"\" after \""<<error.preSymbol<<"\""<<std::endl;
+                *errFile<<"***"<<error.line<<":Expected"<<" \""<<error.symbol<<"\" after \""<<error.preSymbol<<"\""<<std::endl;
             }
             else if(error.type == ErrorType::Undefined)
             {
@@ -519,7 +519,7 @@ bool RecursiveDescentAnalyser::ExecutableStatement()
     }
     else
     {
-        ExpectedError("read or write or if or identifier");
+        ExpectedError("read\" or \"write\" or \"if\" or \"identifier");
         return false;
     }
     return true;

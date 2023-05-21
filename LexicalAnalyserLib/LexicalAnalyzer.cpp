@@ -245,7 +245,7 @@ bool LexicalAnalyzer::Output()
     }
     if (!outputErr->size())
     {
-        std::cout << "No lexical prror founded,finished analyzing" << std::endl;
+        std::cout << "No lexical error founded,finished analyzing" << std::endl;
         return true;
     }
     else
