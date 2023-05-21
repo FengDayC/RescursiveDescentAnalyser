@@ -40,7 +40,6 @@ private:
 
     static std::shared_ptr<LexicalAnalyzer> instance;
 
-    //字符指针
     int pointer;
 
     inline char get() const

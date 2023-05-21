@@ -79,7 +79,7 @@ void LexicalAnalyzer::Analyse()
             {
                 if (cnt++ > 16)
                 {
-                    outputErr->push_back(LexError{ line,"标识符长度溢出" });
+                    outputErr->push_back(LexError{ line,"Identifier length exceeded" });
                     err = true;
                     break;
                 }
@@ -99,7 +99,7 @@ void LexicalAnalyzer::Analyse()
             {
                 if (cnt++ > 16)
                 {
-                    outputErr->push_back(LexError{ line,"常量长度溢出" });
+                    outputErr->push_back(LexError{ line,"Constant length exceeded" });
                     err = true;
                     break;
                 }
@@ -163,7 +163,7 @@ void LexicalAnalyzer::Analyse()
             }
             else
             {
-                outputErr->push_back(LexError{ line,"冒号不匹配" });
+                outputErr->push_back(LexError{ line,"Colon not matched" });
                 continue;
             }
         }
@@ -185,7 +185,7 @@ void LexicalAnalyzer::Analyse()
         }
         else
         {
-            outputErr->push_back(LexError{ line,"非法字符" });
+            outputErr->push_back(LexError{ line,"Invalid character" });
         }
 
         if (err)
@@ -195,7 +195,6 @@ void LexicalAnalyzer::Analyse()
 
         word.symbol = buf->str();
 
-        //若识别结果为标识符，保留保留字
         if (word.id == 10)
         {
             RESERVE("begin", 1);
@@ -216,7 +215,7 @@ void LexicalAnalyzer::Analyse()
         }
     }
 
-    std::cout << "词法分析完成" << std::endl;
+    std::cout << "Lexical analyse finished" << std::endl;
 }
 
 bool LexicalAnalyzer::Output()
@@ -227,14 +226,14 @@ bool LexicalAnalyzer::Output()
     fileErr->open(fileName + ".err", std::ios_base::out);
     if (!fileErr->is_open())
     {
-        std::cout << "无法创建err文件" << std::endl;
+        std::cout << ".err file can not created" << std::endl;
         return false;
     }
 
     fileDyd->open(fileName + ".dyd", std::ios_base::out);
     if (!fileDyd->is_open())
     {
-        std::cout << "无法创建dyd文件" << std::endl;
+        std::cout << ".dyd file can not created" << std::endl;
         return false;
     }
 
@@ -246,12 +245,12 @@ bool LexicalAnalyzer::Output()
     }
     if (!outputErr->size())
     {
-        std::cout << "未出现错误，词法分析完成" << std::endl;
+        std::cout << "No lexical prror founded,finished analyzing" << std::endl;
         return true;
     }
     else
     {
-        std::cout << "分析过程中出现如下错误:" << std::endl;
+        std::cout << "Errors founded below:" << std::endl;
     }
     for (auto it = outputErr->begin(); it != outputErr->end(); it++)
     {

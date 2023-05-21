@@ -70,11 +70,11 @@ bool RecursiveDescentAnalyser::Output()
 
     if(errors.empty())
     {
-        std::cout<<"未发现语法错误,分析完成"<<std::endl;
+        std::cout<<"No parsing prror founded,finished analyzing"<<std::endl;
     }
     else
     {
-        std::cout<<"语法分析发现如下错误:"<<std::endl;
+        std::cout<<"Errors founded below:"<<std::endl;
         for(auto errLine : errors)
         {
             ParseError error = errLine.second[0];
