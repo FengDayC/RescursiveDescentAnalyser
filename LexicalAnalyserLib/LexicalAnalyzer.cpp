@@ -28,7 +28,7 @@ void LexicalAnalyzer::Init()
     pointer = -1;
     inputStr.reset();
     outputResult = MK_SPTR(std::vector<Word>, );
-    outputErr = MK_SPTR(std::vector<Error>, );
+    outputErr = MK_SPTR(std::vector<LexError>, );
 }
 
 void LexicalAnalyzer::SourceFileInput(std::string path)
@@ -79,7 +79,7 @@ void LexicalAnalyzer::Analyse()
             {
                 if (cnt++ > 16)
                 {
-                    outputErr->push_back(Error{ line,"标识符长度溢出" });
+                    outputErr->push_back(LexError{ line,"标识符长度溢出" });
                     err = true;
                     break;
                 }
@@ -99,7 +99,7 @@ void LexicalAnalyzer::Analyse()
             {
                 if (cnt++ > 16)
                 {
-                    outputErr->push_back(Error{ line,"常量长度溢出" });
+                    outputErr->push_back(LexError{ line,"常量长度溢出" });
                     err = true;
                     break;
                 }
@@ -163,7 +163,7 @@ void LexicalAnalyzer::Analyse()
             }
             else
             {
-                outputErr->push_back(Error{ line,"冒号不匹配" });
+                outputErr->push_back(LexError{ line,"冒号不匹配" });
                 continue;
             }
         }
@@ -185,7 +185,7 @@ void LexicalAnalyzer::Analyse()
         }
         else
         {
-            outputErr->push_back(Error{ line,"非法字符" });
+            outputErr->push_back(LexError{ line,"非法字符" });
         }
 
         if (err)

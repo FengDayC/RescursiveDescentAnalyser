@@ -5,7 +5,7 @@
 
 std::shared_ptr<RecursiveDescentAnalyser> RecursiveDescentAnalyser::instance;
 
-RecursiveDescentAnalyser::RecursiveDescentAnalyser(/* args */)
+RecursiveDescentAnalyser::RecursiveDescentAnalyser()
 {
 }
 
@@ -26,6 +26,10 @@ void RecursiveDescentAnalyser::Init()
 {
     p = 0;
     line = 0;
+    while(!procedureStack.empty())
+    {
+        procedureStack.pop();
+    }
 }
 
 void RecursiveDescentAnalyser::SourceFileInput(std::string path)
@@ -59,7 +63,7 @@ void RecursiveDescentAnalyser::Analyse()
 
 bool RecursiveDescentAnalyser::Output()
 {
-    return false;
+    return true;
 }
 
 void RecursiveDescentAnalyser::AnalyseInputString(std::string inputStr)
@@ -121,7 +125,7 @@ void RecursiveDescentAnalyser::MovFwd()
     p--;
 }
 
-void RecursiveDescentAnalyser::Error(std::string notice)
+void RecursiveDescentAnalyser::Error(std::string expected)
 {
     int t = p;
     Word pre = GetWord(t-1);
@@ -130,7 +134,8 @@ void RecursiveDescentAnalyser::Error(std::string notice)
         t--;
         pre = GetWord(t);
     }
-    std::cout<<"***LINE:"<<line<<" p="<<p<<" "<<notice<<" after \""<<pre.symbol<<"\""<<std::endl;
+    //std::cout<<"***LINE:"<<line<<" p="<<p<<" "<<notice<<" after \""<<pre.symbol<<"\""<<std::endl;
+    errors[line].push_back({line,p,pre.symbol,expected});
 }
 
 bool RecursiveDescentAnalyser::Program()
@@ -143,22 +148,24 @@ bool RecursiveDescentAnalyser::SubProgram()
 {
     if(GetWord()==1)//begin
     {
+        BeginProgram();
         MovNext();
         DeclarativeStatementTable();
         ExecutableStatementTable();
         if(GetWord()==2)//end
         {
+            EndProgram();
             MovNext();
         }
         else
         {
-            Error("expected \"end\"");
+            Error("end");
             return false;
         }
     }
     else
     {
-        Error("expected\"begin\"");
+        Error("begin");
         return false;
     }
     return true;
@@ -183,20 +190,20 @@ bool RecursiveDescentAnalyser::DeclarativeStatementTable()
                 }
                 else
                 {
-                    Error("Expected\";\"");
+                    Error(";");
                     return false;
                 }
             }
         }
         else
         {
-            Error("Expected\";\"");
+            Error(";");
             return false;
         }
     }
     else
     {
-        Error("expected\"integer\"");
+        Error("integer");
         return false;        
     }
 }
@@ -223,25 +230,25 @@ bool RecursiveDescentAnalyser::DeclarativeStatement2()
                     }
                     else
                     {
-                        Error("Expected\";\"");
+                        Error(";");
                         return false;
                     }
                 }
                 else
                 {
-                    Error("Expected\")\"");
+                    Error(")");
                     return false;
                 }
             }
             else
             {
-                Error("Expected\"(\"");
+                Error("(");
                 return false;
             }
         }
         else
         {
-            Error("Expected identifier");
+            Error("identifier");
             return false;
         }
     }
@@ -251,7 +258,7 @@ bool RecursiveDescentAnalyser::DeclarativeStatement2()
     }
     else
     {
-        Error("Expected Identifier or \"function\"");
+        Error("identifier or function");
         return false;
     }
     return true;
@@ -265,7 +272,7 @@ bool RecursiveDescentAnalyser::Prameter()
     }
     else
     {
-        Error("Expect identifier");
+        Error("identifier");
         return false;
     }
     return true;
@@ -284,13 +291,13 @@ bool RecursiveDescentAnalyser::FunctionBody()
         }
         else
         {
-            Error("Expected \"end\"");
+            Error("end");
             return false;
         }
     }
     else
     {
-        Error("Expected \"begin\"");
+        Error("begin");
         return false;
     }
     return true;
@@ -324,19 +331,19 @@ bool RecursiveDescentAnalyser::ExecutableStatement()
                 }
                 else
                 {
-                    Error("Expected \")\"");
+                    Error(")");
                     return false;
                 }
             }
             else
             {
-                Error("Expected identifier");
+                Error("identifier");
                 return false;
             }
         }
         else
         {
-            Error("Expected \"(\"");
+            Error("(");
             return false;
         }
     }
@@ -355,19 +362,19 @@ bool RecursiveDescentAnalyser::ExecutableStatement()
                 }
                 else
                 {
-                    Error("Expected \")\"");
+                    Error(")");
                     return false;
                 }
             }
             else
             {
-                Error("Expected identifier");
+                Error("identifier");
                 return false;
             }
         }
         else
         {
-            Error("Expected \"(\"");
+            Error("(");
             return false;
         }
     }
@@ -381,7 +388,7 @@ bool RecursiveDescentAnalyser::ExecutableStatement()
         }
         else
         {
-            Error("Expected \":=\"");
+            Error(":=");
             return false;
         }
     }
@@ -400,19 +407,19 @@ bool RecursiveDescentAnalyser::ExecutableStatement()
             }
             else
             {
-                Error("Expected \"else\"");
+                Error("else");
                 return false;
             }
         }
         else
         {
-            Error("Expected \"then\"");
+            Error("then");
             return false;
         }
     }
     else
     {
-        Error("Expected \"read\" or \"write\" or \"if\" or identifier");
+        Error("read or write or if or identifier");
         return false;
     }
     return true;
@@ -453,7 +460,7 @@ bool RecursiveDescentAnalyser::Factor()
     }
     else
     {
-        Error("Expected identifier or constant number");
+        Error("identifier or constant number");
         return false;
     }
     return true;
@@ -471,7 +478,7 @@ bool RecursiveDescentAnalyser::Factor2()
         }
         else
         {
-            Error("Expected \")\"");
+            Error(")");
             return false;
         }
     }
@@ -494,8 +501,44 @@ bool RecursiveDescentAnalyser::ConditionalExpression()
     }
     else
     {
-        Error("Expected \"=\" or \"<>\" or \"<=\" or \"<\" or \">=\" or \">\"");
+        Error("= or <> or <= or < or >= or >");
         return false;
     }
     return true;
+}
+
+void RecursiveDescentAnalyser::BeginProgram()
+{
+    procedureStack.push({"Program",Type::Void,0,-1,-1});
+}
+
+void RecursiveDescentAnalyser::EndProgram()
+{
+    Procedure procedure = procedureStack.top();
+    procedureStack.pop();
+    procedure.ladr = variableTable.size() - 1;
+    procedureTable.push_back(procedure);
+}
+
+void RecursiveDescentAnalyser::BeginFunction(std::string procedureName, Type procedureType)
+{
+    procedureStack.push({procedureName,procedureType,procedureStack.size(),-1,-1});
+}
+
+void RecursiveDescentAnalyser::EndFunction()
+{
+    Procedure procedure = procedureStack.top();
+    procedureStack.pop();
+    procedure.ladr = variableTable.size() - 1;
+    procedureTable.push_back(procedure);
+}
+
+void RecursiveDescentAnalyser::DeclareVariable()
+{
+
+}
+
+bool RecursiveDescentAnalyser::CheckVariableTable(std::string symbol)
+{
+
 }

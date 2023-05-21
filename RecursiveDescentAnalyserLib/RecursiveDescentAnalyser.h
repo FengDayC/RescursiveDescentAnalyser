@@ -1,14 +1,43 @@
 
 struct Word;
 
+enum class VariableKind
+{
+    Variable = 0,
+    Parameter = 1
+};
+
+enum class Type
+{
+    Void = 0,
+    Integer = 1
+};
+
 struct Variable
 {
-
+    std::string vname;
+    std::string vproc;
+    VariableKind vkind;
+    Type vtype;
+    int vlev;
+    int vadr;
 };
 
 struct Procedure
 {
+    std::string pname;
+    Type ptype;
+    int plev;
+    int fadr;
+    int ladr;
+};
 
+struct ParseError
+{
+    int line;
+    int p;
+    std::string preSymbol;
+    std::string symbol;
 };
 
 class RecursiveDescentAnalyser
@@ -35,6 +64,14 @@ private:
 
     std::string fileName;
 
+    std::stack<Procedure> procedureStack;
+
+    std::map<int,std::vector<ParseError>> errors;
+
+    std::vector<Variable> variableTable;
+
+    std::vector<Procedure> procedureTable;
+
     static std::shared_ptr<RecursiveDescentAnalyser> instance;
 
 private:
@@ -49,7 +86,7 @@ private:
 
     void MovFwd();
 
-    void Error(std::string notice);
+    void Error(std::string expected);
 
 private:
 
@@ -80,4 +117,18 @@ private:
     bool Factor2();
 
     bool ConditionalExpression();
+
+private:
+
+    void BeginProgram();
+
+    void EndProgram();
+
+    void BeginFunction(std::string procedureName, Type procedureType);
+
+    void EndFunction();
+
+    void DeclareVariable();
+
+    bool CheckVariableTable(std::string symbol);
 };

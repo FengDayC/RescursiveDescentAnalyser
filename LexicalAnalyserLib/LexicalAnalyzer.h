@@ -21,7 +21,7 @@ struct Word
     bool operator==(int id);
 };
 
-struct Error
+struct LexError
 {
     int line;
     std::string text;
@@ -36,7 +36,7 @@ private:
     std::shared_ptr<std::string> inputStr;
 
     S_PTR(std::vector<Word>, outputResult);
-    S_PTR(std::vector<Error>, outputErr);
+    S_PTR(std::vector<LexError>, outputErr);
 
     static std::shared_ptr<LexicalAnalyzer> instance;
 
