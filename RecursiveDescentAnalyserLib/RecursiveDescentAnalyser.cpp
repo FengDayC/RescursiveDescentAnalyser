@@ -63,6 +63,14 @@ void RecursiveDescentAnalyser::Analyse()
 
 bool RecursiveDescentAnalyser::Output()
 {
+    for(auto procedure : procedureTable)
+    {
+        std::cout<<"Procedure:"<<procedure.pname<<std::endl;
+        std::cout<<"type:"<<(procedure.ptype == Type::Void ? "Void" : "Integer")<<std::endl;
+        std::cout<<"plev:"<<procedure.plev<<std::endl;
+        std::cout<<"fadr:"<<procedure.fadr<<std::endl;
+        std::cout<<"ladr:"<<procedure.ladr<<std::endl;
+    }
     return true;
 }
 
@@ -176,14 +184,14 @@ bool RecursiveDescentAnalyser::DeclarativeStatementTable()
     if(GetWord()==3)//integer
     {
         MovNext();
-        DeclarativeStatement2();
+        DeclarativeStatement2(Type::Integer);
         if(GetWord() == 23)
         {
             MovNext();
             while(GetWord() == 3)//integer
             {
                 MovNext();
-                DeclarativeStatement2();
+                DeclarativeStatement2(Type::Integer);
                 if(GetWord() == 23)
                 {
                     MovNext();
@@ -208,23 +216,28 @@ bool RecursiveDescentAnalyser::DeclarativeStatementTable()
     }
 }
 
-bool RecursiveDescentAnalyser::DeclarativeStatement2()
+bool RecursiveDescentAnalyser::DeclarativeStatement2(Type type)
 {
     if(GetWord()==7)//function
     {
         MovNext();
         if(GetWord()==10)//identifier
         {
+            std::string identifier = GetWord().symbol;
             MovNext();
             if(GetWord()==21)//(
             {
                 MovNext();
                 Prameter();
+                MovFwd();
+                Word functionName = GetWord();
+                MovNext();
                 if(GetWord()==22)//)
                 {
                     MovNext();
                     if(GetWord()==23)//;
                     {
+                        BeginFunction(identifier,type);
                         MovNext();
                         FunctionBody();
                     }
@@ -254,6 +267,8 @@ bool RecursiveDescentAnalyser::DeclarativeStatement2()
     }
     else if(GetWord()==10)//identifier
     {
+        Word identifier = GetWord();
+        DeclareVariable(identifier.symbol,type);
         MovNext();
     }
     else
@@ -268,6 +283,27 @@ bool RecursiveDescentAnalyser::Prameter()
 {
     if(GetWord()==10)//identifier
     {
+        Word identifier = GetWord();
+        parameters.push(identifier.symbol);
+        MovNext();
+    }
+    else
+    {
+        Error("identifier");
+        return false;
+    }
+    return true;
+}
+
+bool RecursiveDescentAnalyser::VariableReduce()
+{
+    if(GetWord()==10)//identifier
+    {
+        Word identifier = GetWord();
+        if(!CheckVariableTable(identifier.symbol))
+        {
+            return false;
+        }
         MovNext();
     }
     else
@@ -287,6 +323,7 @@ bool RecursiveDescentAnalyser::FunctionBody()
         ExecutableStatementTable();
         if(GetWord()==2)//end
         {
+            EndFunction();
             MovNext();
         }
         else
@@ -322,22 +359,14 @@ bool RecursiveDescentAnalyser::ExecutableStatement()
         if(GetWord()==21)//(
         {
             MovNext();
-            if(GetWord()==10)//identifier
+            VariableReduce();
+            if(GetWord() == 22)//)
             {
                 MovNext();
-                if(GetWord() == 22)//)
-                {
-                    MovNext();
-                }
-                else
-                {
-                    Error(")");
-                    return false;
-                }
             }
             else
             {
-                Error("identifier");
+                Error(")");
                 return false;
             }
         }
@@ -353,22 +382,14 @@ bool RecursiveDescentAnalyser::ExecutableStatement()
         if(GetWord()==21)//(
         {
             MovNext();
-            if(GetWord()==10)//identifier
+            VariableReduce();
+            if(GetWord() == 22)//)
             {
                 MovNext();
-                if(GetWord() == 22)//)
-                {
-                    MovNext();
-                }
-                else
-                {
-                    Error(")");
-                    return false;
-                }
             }
             else
             {
-                Error("identifier");
+                Error(")");
                 return false;
             }
         }
@@ -380,7 +401,7 @@ bool RecursiveDescentAnalyser::ExecutableStatement()
     }
     else if(GetWord() == 10)//identifier
     {
-        MovNext();
+        VariableReduce();
         if(GetWord() == 20)//:=
         {
             MovNext();
@@ -451,8 +472,9 @@ bool RecursiveDescentAnalyser::Factor()
 {
     if(GetWord() == 10)//identifier
     {
+        Word identifier = GetWord();
         MovNext();
-        Factor2();
+        Factor2(identifier.symbol);
     }
     else if(GetWord() == 11)//constant number
     {
@@ -466,10 +488,11 @@ bool RecursiveDescentAnalyser::Factor()
     return true;
 }
 
-bool RecursiveDescentAnalyser::Factor2()
+bool RecursiveDescentAnalyser::Factor2(std::string symbol)
 {
     if(GetWord() == 21)//(
     {
+        CheckProcedureTable(symbol);
         MovNext();
         ArithmeticExpression();
         if(GetWord() == 22)//)
@@ -481,6 +504,10 @@ bool RecursiveDescentAnalyser::Factor2()
             Error(")");
             return false;
         }
+    }
+    else
+    {
+        CheckVariableTable(symbol);
     }
     return true;
 }
@@ -522,7 +549,7 @@ void RecursiveDescentAnalyser::EndProgram()
 
 void RecursiveDescentAnalyser::BeginFunction(std::string procedureName, Type procedureType)
 {
-    procedureStack.push({procedureName,procedureType,procedureStack.size(),-1,-1});
+    procedureStack.push({procedureName,procedureType,(int)procedureStack.size(),-1,-1});
 }
 
 void RecursiveDescentAnalyser::EndFunction()
@@ -531,14 +558,44 @@ void RecursiveDescentAnalyser::EndFunction()
     procedureStack.pop();
     procedure.ladr = variableTable.size() - 1;
     procedureTable.push_back(procedure);
+    parameters.pop();
 }
 
-void RecursiveDescentAnalyser::DeclareVariable()
+void RecursiveDescentAnalyser::DeclareVariable(std::string vName,Type type)
 {
-
+    Procedure procedure = procedureStack.top();
+    VariableKind kind = VariableKind::Variable;
+    if(parameters.size()>0)
+    {
+        kind = parameters.top()==vName?VariableKind::Parameter:VariableKind::Variable;
+    }
+    variableTable.push_back({vName,procedure.pname,kind,type,procedure.plev,(int)variableTable.size()});
 }
 
 bool RecursiveDescentAnalyser::CheckVariableTable(std::string symbol)
 {
+    for(const auto var : variableTable)
+    {
+        if(symbol == var.vname)
+        {
+            return true;
+        }
+    }
+    return false;
+}
 
+bool RecursiveDescentAnalyser::CheckProcedureTable(std::string symbol)
+{
+    for(const auto proc : procedureTable)
+    {
+        if(symbol == proc.pname)
+        {
+            return true;
+        }
+    }
+    if(procedureStack.top().pname == symbol)
+    {
+        return true;
+    }
+    return false;
 }

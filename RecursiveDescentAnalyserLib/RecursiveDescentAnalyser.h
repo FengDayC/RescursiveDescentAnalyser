@@ -70,6 +70,8 @@ private:
 
     std::vector<Variable> variableTable;
 
+    std::stack<std::string> parameters;
+
     std::vector<Procedure> procedureTable;
 
     static std::shared_ptr<RecursiveDescentAnalyser> instance;
@@ -96,11 +98,13 @@ private:
 
     bool DeclarativeStatementTable();
 
-    bool DeclarativeStatement2();
+    bool DeclarativeStatement2(Type type);
 
     bool FunctionDeclaration();
 
     bool Prameter();
+
+    bool VariableReduce();
 
     bool FunctionBody();
 
@@ -114,7 +118,7 @@ private:
 
     bool Factor();
 
-    bool Factor2();
+    bool Factor2(std::string symbol);
 
     bool ConditionalExpression();
 
@@ -128,7 +132,9 @@ private:
 
     void EndFunction();
 
-    void DeclareVariable();
+    void DeclareVariable(std::string vName,Type type);
 
     bool CheckVariableTable(std::string symbol);
+
+    bool CheckProcedureTable(std::string symbol);
 };
