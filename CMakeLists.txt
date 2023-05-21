@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.0.0)
 project(RecursiveDescentAnalyser VERSION 0.1.0)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
+
 IF(WIN32)
     add_definitions(-DBUILT_IN_WIN32)
 ELSEIF(UNIX)
